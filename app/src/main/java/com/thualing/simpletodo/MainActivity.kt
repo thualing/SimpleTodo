@@ -1,5 +1,7 @@
 package com.thualing.simpletodo
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -12,6 +14,13 @@ import java.io.File
 import java.io.IOException
 
 class MainActivity : AppCompatActivity() {
+
+    companion object {
+        val EDIT_REQUEST_CODE = 20
+        val ITEM_TEXT = "itemText"
+        val ITEM_POSITION = "itemPosition"
+
+    }
 
     lateinit var itemsView : ListView
     var items = ArrayList<String>()
@@ -51,6 +60,17 @@ class MainActivity : AppCompatActivity() {
             writeItems()
             true
         }
+
+        // setup a regular click listener to edit the item
+        lvItems.setOnItemClickListener { parent, view, position, id ->
+            // create new activity
+            val intent = Intent(this@MainActivity, EditItemActivity::class.java)
+            // pass the data being edited
+            intent.putExtra(ITEM_TEXT, items.get(position))
+            intent.putExtra(ITEM_POSITION, position)
+            // display the activity
+            startActivityForResult(intent, EDIT_REQUEST_CODE)
+        }
     }
 
     private fun getDateFile(): File {
@@ -80,6 +100,18 @@ class MainActivity : AppCompatActivity() {
         }
         catch (e : IOException) {
             Log.e("MainActivity", "Error writing file" + e)
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (resultCode == Activity.RESULT_OK && requestCode == EDIT_REQUEST_CODE) {
+            var updatedItem = data?.extras?.getString(ITEM_TEXT).toString()
+            var pos = data?.extras?.getInt(ITEM_POSITION)!!
+            items.set(pos, updatedItem)
+            itemsAdapter.notifyDataSetChanged()
+            writeItems()
+            Toast.makeText(this, "Item updated successfully", Toast.LENGTH_SHORT).show()
         }
     }
 }
